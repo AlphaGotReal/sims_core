@@ -1,7 +1,4 @@
 .venv/
 robot_usd/
 _robot_tmp.urdf
-demos/
-videos/
-mani/
-ignore/
+
