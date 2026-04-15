@@ -27,20 +27,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         mujoco.mj_step(model, data)
         viewer.sync()
 
-        step_count += 1
-        if step_count % 100 == 0:
-            print(f"\n--- Time: {t:.3f}s ---")
-            print("ROBOT 1:")
-            for i, act_id in enumerate(robot1_actuator_idxs):
-                if act_id < model.na:
-                    ctrl = data.ctrl[act_id]
-                    print(f"  Act {i:2d}: {ctrl:8.4f}")
-            print("ROBOT 2:")
-            for i, act_id in enumerate(robot2_actuator_idxs):
-                if act_id < model.na:
-                    ctrl = data.ctrl[act_id]
-                    print(f"  Act {i:2d}: {ctrl:8.4f}")
-
         time_until_next_step = model.opt.timestep - (
             time.time() - step_start
         )
