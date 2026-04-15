@@ -1,34 +1,46 @@
 #! /usr/bin/env python
 
-import sys
 import os
-import mujoco
-import mujoco.viewer
 import time
-import numpy as np
+import argparse
 
-xml_path = os.path.abspath(sys.argv[1])
-os.chdir(os.path.dirname(xml_path))
+import mujoco
 
-model = mujoco.MjModel.from_xml_path(xml_path)
-data = mujoco.MjData(model)
+from _mj_utils import load_model_with_cameras, CameraStreams
 
-robot1_actuator_idxs = list(range(16))
-robot2_actuator_idxs = list(range(16, 32))
 
-with mujoco.viewer.launch_passive(model, data) as viewer:
-    start_time = time.time()
-    step_count = 0
+def main(args):
+    xml_path = os.path.abspath(args.xml)
+    os.chdir(os.path.dirname(xml_path))
 
-    while viewer.is_running() and time.time() - start_time < 30:
-        step_start = time.time()
+    model, cams = load_model_with_cameras(xml_path)
+    data        = mujoco.MjData(model)
 
-        t = data.time
+    streams = CameraStreams(model, cams, show=args.render,
+                            every=args.cam_every) if args.render else None
+
+    start = time.time()
+    while time.time() - start < args.duration:
+        t0 = time.time()
         mujoco.mj_step(model, data)
-        viewer.sync()
 
-        time_until_next_step = model.opt.timestep - (
-            time.time() - step_start
-        )
-        if time_until_next_step > 0:
-            time.sleep(time_until_next_step)
+        if streams is not None:
+            streams.update(data)
+
+        dt = model.opt.timestep - (time.time() - t0)
+        if dt > 0:
+            time.sleep(dt)
+
+    if streams is not None:
+        streams.close()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("xml")
+    parser.add_argument("--render",    action="store_true",
+                        help="show cv2 camera windows")
+    parser.add_argument("--cam-every", type=int, default=1)
+    parser.add_argument("--duration",  type=float, default=30.0)
+    args = parser.parse_args()
+    main(args)

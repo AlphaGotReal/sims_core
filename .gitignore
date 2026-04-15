@@ -1,4 +1,4 @@
 .venv/
 robot_usd/
 _robot_tmp.urdf
-
+**/__pycache__/
