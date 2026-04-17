@@ -1,0 +1,40 @@
+actuators:
+  - type:             pd_joint_pos
+    joints:           [left_joint1,  left_joint2,  left_joint3,  left_joint4,  left_joint5,  left_joint6,
+                       right_joint1, right_joint2, right_joint3, right_joint4, right_joint5, right_joint6]
+    stiffness:        [1000, 1000, 1000, 1000, 500, 500,
+                       1000, 1000, 1000, 1000, 500, 500]
+    damping:          [100,  100,  100,  100,  50,  50,
+                       100,  100,  100,  100,  50,  50]
+    force_limit:      [100,  100,  100,  100,  50,  50,
+                       100,  100,  100,  100,  50,  50]
+    normalize_action: false
+
+  - type:             pd_joint_pos_mimic
+    joints:           ["left_joint7.1",  "left_joint7.2",  "right_joint7.1",  "right_joint7.2"]
+    stiffness:        [200,  200,  200,  200]
+    damping:          [20,   20,   20,   20]
+    force_limit:      [10,   10,   10,   10]
+    normalize_action: false
+    mimic:
+      "left_joint7.2":  {joint: "left_joint7.1",  multiplier: -1.0, offset: 0.0}
+      "right_joint7.2": {joint: "right_joint7.1", multiplier: -1.0, offset: 0.0}
+
+cameras:
+  - name:   right_cam
+    link:   right_cam_link
+    pose:   [0.0, -0.01, 0.0, 1.0, 0.0, 0.0, 0.0] 
+    width:  640
+    height: 480
+    fov:    1.047              
+    near:   0.01
+    far:    3.0
+
+  - name:   left_cam
+    link:   left_cam_link 
+    pose:   [0.0, -0.01, 0.0, 1.0, 0.0, 0.0, 0.0] 
+    width:  640
+    height: 480
+    fov:    1.047              
+    near:   0.01
+    far:    3.0

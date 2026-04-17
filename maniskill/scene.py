@@ -101,13 +101,16 @@ class SceneDescription:
 @dataclass
 class SimConfig:
     robot:         RobotConfig
+    sim_name:      str                 = "sim"
+    robot_name:    str                 = "robot"
+    env_name:      str                 = "SimEnv-v0"
     scene:         SceneDescription    = field(default_factory=SceneDescription)
     background:    BackgroundConfig    = field(default_factory=BackgroundConfig)
     lighting:      LightingConfig      = field(default_factory=LightingConfig)
     randomization: DomainRandomization = field(default_factory=DomainRandomization)
     render:        RenderConfig        = field(default_factory=RenderConfig)
     num_envs:      int                 = 1
-    sim_backend:   str                 = "auto"  # auto | cpu | gpu | cuda:0 etc.
+    sim_backend:   str                 = "auto"
     real_time:     bool                = False
 
 
@@ -210,6 +213,9 @@ def load(path: str) -> SimConfig:
 
     return SimConfig(
         robot         = robot,
+        sim_name      = str(raw.get("sim_name",   "sim")),
+        robot_name    = str(raw.get("robot_name", "robot")),
+        env_name      = str(raw.get("env_name",   "SimEnv-v0")),
         scene         = scene,
         background    = background,
         lighting      = lighting,

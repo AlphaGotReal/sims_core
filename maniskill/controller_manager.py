@@ -6,7 +6,7 @@ import gymnasium as gym
 
 from mani_skill.agents.base_agent   import BaseAgent, Keyframe
 from mani_skill.agents.registration import register_agent
-from mani_skill.agents.controllers  import PDJointPosControllerConfig
+from mani_skill.agents.controllers  import PDJointPosControllerConfig, PDJointPosMimicControllerConfig
 from mani_skill.envs.sapien_env     import BaseEnv
 from mani_skill.utils.registration  import register_env
 from mani_skill.utils               import sapien_utils
@@ -18,7 +18,9 @@ from mani_skill.utils.scene_builder.kitchen_counter import KitchenCounterSceneBu
 import torch
 from mani_skill.utils.structs.pose import Pose as ManiPose
 
-from .config import SimConfig, parse_pose
+from .scene    import SimConfig, parse_pose
+from .hardware import HardwareConfig, ActuatorConfig
+from .actors   import BaseActor, load as load_actors
 
 BUILTIN_SCENES = {
     "kitchen_counter": KitchenCounterSceneBuilder,
@@ -26,8 +28,9 @@ BUILTIN_SCENES = {
 
 class SimEnv(BaseEnv):
 
-    def __init__(self, *args, sim_cfg: SimConfig, robot_uid: str, **kwargs):
+    def __init__(self, *args, sim_cfg: SimConfig, hw_cfg: HardwareConfig, robot_uid: str, **kwargs):
         self.sim_cfg   = sim_cfg
+        self.hw_cfg    = hw_cfg
         self.dr_actors = {}   # name -> (actor, base_pose) for pose reset each episode
         super().__init__(*args, robot_uids=robot_uid, **kwargs)
 
@@ -228,29 +231,92 @@ class ControllerManager:
     No control — robot holds rest pose. Ctrl-C exits the loop.
     """
 
-    def __init__(self, cfg: SimConfig) -> None:
-        self.cfg = cfg
-        self.env = self.build_env()
+    def __init__(self, cfg: SimConfig, hw_cfg: HardwareConfig | None = None,
+                 actors_path: str | None = None) -> None:
+        self.cfg      = cfg
+        self.hw_cfg   = hw_cfg or HardwareConfig()
+        self.env      = self.build_env()
+
+        num_envs           = self.env.unwrapped.num_envs
+        action_dim         = self.env.single_action_space.shape[0]
+        self.actions       = [np.zeros(action_dim, dtype=np.float32) for _ in range(num_envs)]
+        self.intermediates = [{} for _ in range(num_envs)]
+        joint_names  = [j for act in self.hw_cfg.actuators for j in act.joints]
+        sensor_names = [cam.name for cam in self.hw_cfg.cameras]
+        self.actors: list[list[BaseActor]] = (
+            load_actors(actors_path, num_envs, self.actions, self.intermediates,
+                        joint_names, sensor_names)
+            if actors_path else [[] for _ in range(num_envs)]
+        )
 
     def build_env(self) -> gym.Env:
-        robot_uid = "sim_robot"
-        env_id    = "SimEnv-v0"
+        robot_uid = self.cfg.robot_name
+        env_id    = self.cfg.env_name
 
         robot_cfg = self.cfg.robot
+        hw_cfg    = self.hw_cfg
 
         def controller_configs(self_agent):
-            joints = [j.name for j in self_agent.robot.get_active_joints()]
-            return dict(
-                pd_joint_pos = PDJointPosControllerConfig(
-                    joints,
-                    lower            = None,
-                    upper            = None,
-                    stiffness        = 1e3,
-                    damping          = 1e2,
-                    force_limit      = 100.0,
-                    normalize_action = False,
+            all_joints = [j.name for j in self_agent.robot.get_active_joints()]
+            if not hw_cfg.actuators:
+                return dict(
+                    pd_joint_pos = PDJointPosControllerConfig(
+                        all_joints, lower=None, upper=None,
+                        stiffness=1e3, damping=1e2, force_limit=100.0,
+                        normalize_action=False,
+                    )
                 )
-            )
+            group = {}
+            for i, act in enumerate(hw_cfg.actuators):
+                joints = act.joints if act.joints else all_joints
+                key    = f"{act.type}_{i}"
+                if act.type == "pd_joint_pos":
+                    group[key] = PDJointPosControllerConfig(
+                        joints,
+                        lower            = None,
+                        upper            = None,
+                        stiffness        = act.stiffness,
+                        damping          = act.damping,
+                        force_limit      = act.force_limit,
+                        normalize_action = act.normalize_action,
+                    )
+                elif act.type == "pd_joint_pos_mimic":
+                    group[key] = PDJointPosMimicControllerConfig(
+                        joints,
+                        lower            = None,
+                        upper            = None,
+                        stiffness        = act.stiffness,
+                        damping          = act.damping,
+                        force_limit      = act.force_limit,
+                        normalize_action = act.normalize_action,
+                        mimic            = {
+                            name: dict(
+                                joint      = m.joint,
+                                multiplier = m.multiplier,
+                                offset     = m.offset,
+                            )
+                            for name, m in act.mimic.items()
+                        },
+                    )
+                else:
+                    raise ValueError(f"Unknown actuator type '{act.type}'")
+            # wrap in combined mode so all groups are active together
+            return {"combined": group}
+
+        def sensor_configs(self_agent):
+            from mani_skill.sensors.camera import CameraConfig as ManiCameraConfig
+            configs = []
+            for cam in hw_cfg.cameras:
+                pose = sapien_utils.look_at(
+                    eye    = cam.pose[:3],
+                    target = [cam.pose[0], cam.pose[1] + 1.0, cam.pose[2]],
+                ) if len(cam.pose) == 3 else parse_pose(cam.pose)
+                configs.append(ManiCameraConfig(
+                    cam.name, pose, cam.width, cam.height,
+                    cam.fov, cam.near, cam.far,
+                    mount = self_agent.robot.find_link_by_name(cam.link),
+                ))
+            return configs
 
         robot_cls = type(robot_uid, (BaseAgent,), dict(
             uid                      = robot_uid,
@@ -261,41 +327,68 @@ class ControllerManager:
                 rest=Keyframe(qpos=None, pose=parse_pose(robot_cfg.pose))
             ),
             _controller_configs = property(controller_configs),
+            _sensor_configs     = property(sensor_configs),
         ))
         register_agent()(robot_cls)
 
         register_env(env_id, max_episode_steps=10_000)(SimEnv)
 
-        render_mode = "human" if self.cfg.render.gui else "rgb_array"
+        has_cameras  = bool(self.hw_cfg.cameras)
+        obs_mode     = "sensor_data" if has_cameras else "state"
+        render_mode  = "human" if self.cfg.render.gui else "rgb_array"
+        single_scene = self.cfg.num_envs > 1 and not has_cameras
         return gym.make(
             env_id,
             num_envs                 = self.cfg.num_envs,
-            obs_mode                 = "state",
-            control_mode             = "pd_joint_pos",
+            obs_mode                 = obs_mode,
+            control_mode             = "combined" if self.hw_cfg.actuators else "pd_joint_pos",
             render_mode              = render_mode,
             sim_backend              = self.cfg.sim_backend,
-            parallel_in_single_scene = self.cfg.render.gui and self.cfg.num_envs > 1,
+            parallel_in_single_scene = single_scene,
             sim_cfg                  = self.cfg,
+            hw_cfg                   = self.hw_cfg,
             robot_uid                = robot_uid,
         )
 
     def run(self) -> None:
         import time
-        obs, _       = self.env.reset()
-        n            = self.env.unwrapped.num_envs
-        action       = np.zeros((n, *self.env.single_action_space.shape))
-        control_dt   = self.env.unwrapped.control_timestep
+        obs, _     = self.env.reset()
+        num_envs   = self.env.unwrapped.num_envs
+        control_dt = self.env.unwrapped.control_timestep
         try:
             while True:
                 t0 = time.perf_counter()
-                self.env.step(action)
+
+                for stack in self.actors:
+                    for actor in stack:
+                        actor.update(obs)
+
+                batch_action        = np.stack(self.actions)
+                new_obs, _, _, _, _ = self.env.step(batch_action)
+
+                done_mask = np.zeros(num_envs, dtype=bool)
+                for n, stack in enumerate(self.actors):
+                    for actor in stack:
+                        if actor.step_callback(obs, self.actions[n], new_obs):
+                            done_mask[n] = True
+
+                if done_mask.any():
+                    env_ids = np.where(done_mask)[0]
+                    for n in env_ids:
+                        for actor in self.actors[n]:
+                            actor.episode_callback()
+                            actor.reset()
+                        self.actions[n][:] = 0.0
+                        self.intermediates[n].clear()
+                    new_obs, _ = self.env.reset(options={"env_idx": env_ids})
+
+                obs = new_obs
+
                 if self.cfg.render.gui:
                     self.env.render()
                 if self.cfg.real_time:
                     elapsed = time.perf_counter() - t0
-                    remaining = control_dt - elapsed
-                    if remaining > 0:
-                        time.sleep(remaining)
+                    time.sleep(max(0.0, control_dt - elapsed))
         except KeyboardInterrupt:
             pass
 
