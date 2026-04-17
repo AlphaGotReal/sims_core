@@ -1,0 +1,48 @@
+sim:
+  frequency: 200
+  instances: 1
+  realtime:  false
+  render:    true
+
+robot:
+  urdf: /home/straw/Projects/garage/sims_maniskill_wt/examples/workcell.template.urdf
+
+controllers:
+  - name:      left_arm
+    type:      joint_position
+    joints:    [left_joint1, left_joint2, left_joint3,
+                left_joint4, left_joint5, left_joint6]
+    frequency: 50
+    params:
+      smoothing_tau: 0.8
+
+  - name:      left_gripper
+    type:      joint_position
+    joints:    [left_joint7.1, left_joint7.2]
+    frequency: 50
+
+  - name:      right_arm
+    type:      joint_position
+    joints:    [right_joint1, right_joint2, right_joint3,
+                right_joint4, right_joint5, right_joint6]
+    frequency: 50
+    params:
+      smoothing_tau: 0.8
+
+  - name:      right_gripper
+    type:      joint_position
+    joints:    [right_joint7.1, right_joint7.2]
+    frequency: 50
+
+sensors:
+  - name:   left_cam
+    type:   camera
+    parent: left_cam_link
+
+  - name:   right_cam
+    type:   camera
+    parent: right_cam_link
+
+  - name:   center_cam
+    type:   camera
+    parent: center_cam_link
