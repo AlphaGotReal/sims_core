@@ -1,0 +1,58 @@
+num_envs: 2
+backend: "auto"
+
+robot:
+  urdf:     /home/straw/Projects/garage/sims_maniskill_wt/examples/test.urdf
+  fix_root: true
+  pose:     [0.0, 0.0, 0.0]   # raised to counter height
+
+background:
+  type: ground
+
+scene:
+  objects:
+    - name:   mug
+      type:   sphere
+      static: false
+      radius: 0.04
+      color:  [0.9, 0.6, 0.1, 1.0]
+      pose:   [0.5, 0.0, 2.0]
+
+    - name:   small_box
+      type:   box
+      static: false
+      size:   [0.03, 0.03, 0.03]
+      color:  [0.2, 0.5, 0.8, 1.0]
+      pose:   [0.4, 0.1, 2.0]
+
+    - name:   cardboard_box
+      type:   urdf
+      path:   /home/straw/Projects/garage/sims_maniskill_wt/examples/cardboard_box.urdf
+      static: false
+      pose:   [0.5, 0.0, 2.0]
+
+randomization:
+  objects:
+    - name: mug
+      x: [-0.25, 0.25]
+      y: [-0.35,  0.35]
+
+    - name: small_box
+      x: [-0.25, 0.25]
+      y: [-0.35,  0.35]
+
+lighting:
+  ambient: [0.4, 0.0, 0.4]
+  sources:
+    - type:      directional
+      direction: [0.3, -0.5, -1.0]
+      color:     [0.0, 0.95, 0.0]
+      shadow:    true
+
+render:
+  gui: true
+  camera:
+    eye:    [-0.8, 0.0, 2.0]
+    target: [0.0, 0.0, 1.0]
+    width:  1280
+    height: 720

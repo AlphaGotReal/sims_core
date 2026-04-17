@@ -1,0 +1,63 @@
+<robot name="cardboard_box">
+  <link name="base">
+    <inertial><mass value="0.3"/><inertia ixx="1e-3" ixy="0" ixz="0" iyy="1e-3" iyz="0" izz="1e-3"/></inertial>
+    <collision><geometry><box size="0.3 0.2 0.003"/></geometry><origin xyz="0 0 -0.0985" rpy="0 0 0"/></collision>
+    <visual><geometry><box size="0.3 0.2 0.003"/></geometry><origin xyz="0 0 -0.0985" rpy="0 0 0"/><material name="cardboard"><color rgba="0.76 0.60 0.42 1.0"/></material></visual>
+    <collision><geometry><box size="0.003 0.2 0.2"/></geometry><origin xyz="0.1485 0 0" rpy="0 0 0"/></collision>
+    <visual><geometry><box size="0.003 0.2 0.2"/></geometry><origin xyz="0.1485 0 0" rpy="0 0 0"/><material name="cardboard"><color rgba="0.76 0.60 0.42 1.0"/></material></visual>
+    <collision><geometry><box size="0.003 0.2 0.2"/></geometry><origin xyz="-0.1485 0 0" rpy="0 0 0"/></collision>
+    <visual><geometry><box size="0.003 0.2 0.2"/></geometry><origin xyz="-0.1485 0 0" rpy="0 0 0"/><material name="cardboard"><color rgba="0.76 0.60 0.42 1.0"/></material></visual>
+    <collision><geometry><box size="0.3 0.003 0.2"/></geometry><origin xyz="0 0.0985 0" rpy="0 0 0"/></collision>
+    <visual><geometry><box size="0.3 0.003 0.2"/></geometry><origin xyz="0 0.0985 0" rpy="0 0 0"/><material name="cardboard"><color rgba="0.76 0.60 0.42 1.0"/></material></visual>
+    <collision><geometry><box size="0.3 0.003 0.2"/></geometry><origin xyz="0 -0.0985 0" rpy="0 0 0"/></collision>
+    <visual><geometry><box size="0.3 0.003 0.2"/></geometry><origin xyz="0 -0.0985 0" rpy="0 0 0"/><material name="cardboard"><color rgba="0.76 0.60 0.42 1.0"/></material></visual>
+  </link>
+  <link name="right_minor_flap">
+    <inertial><mass value="0.02"/><inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/></inertial>
+    <collision><geometry><box size="0.003 0.2 0.1"/></geometry><origin xyz="0 0 0.05" rpy="0 0 0"/></collision>
+    <visual><geometry><box size="0.003 0.2 0.1"/></geometry><origin xyz="0 0 0.05" rpy="0 0 0"/><material name="cardboard"><color rgba="0.76 0.60 0.42 1.0"/></material></visual>
+  </link>
+  <joint name="right_minor_joint" type="revolute">
+    <parent link="base"/><child link="right_minor_flap"/>
+    <origin xyz="0.15 0 0.1" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.570796" upper="0.000000" effort="10" velocity="3"/>
+    <dynamics damping="0.1" friction="0.05"/>
+  </joint>
+  <link name="left_minor_flap">
+    <inertial><mass value="0.02"/><inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/></inertial>
+    <collision><geometry><box size="0.003 0.2 0.1"/></geometry><origin xyz="0 0 0.05" rpy="0 0 0"/></collision>
+    <visual><geometry><box size="0.003 0.2 0.1"/></geometry><origin xyz="0 0 0.05" rpy="0 0 0"/><material name="cardboard"><color rgba="0.76 0.60 0.42 1.0"/></material></visual>
+  </link>
+  <joint name="left_minor_joint" type="revolute">
+    <parent link="base"/><child link="left_minor_flap"/>
+    <origin xyz="-0.15 0 0.1" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="0.000000" upper="1.570796" effort="10" velocity="3"/>
+    <dynamics damping="0.1" friction="0.05"/>
+  </joint>
+  <link name="front_major_flap">
+    <inertial><mass value="0.02"/><inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/></inertial>
+    <collision><geometry><box size="0.3 0.003 0.1"/></geometry><origin xyz="0 0 0.05" rpy="0 0 0"/></collision>
+    <visual><geometry><box size="0.3 0.003 0.1"/></geometry><origin xyz="0 0 0.05" rpy="0 0 0"/><material name="cardboard"><color rgba="0.76 0.60 0.42 1.0"/></material></visual>
+  </link>
+  <joint name="front_major_joint" type="revolute">
+    <parent link="base"/><child link="front_major_flap"/>
+    <origin xyz="0 0.1 0.1" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="0.000000" upper="1.570796" effort="10" velocity="3"/>
+    <dynamics damping="0.1" friction="0.05"/>
+  </joint>
+  <link name="back_major_flap">
+    <inertial><mass value="0.02"/><inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/></inertial>
+    <collision><geometry><box size="0.3 0.003 0.1"/></geometry><origin xyz="0 0 0.05" rpy="0 0 0"/></collision>
+    <visual><geometry><box size="0.3 0.003 0.1"/></geometry><origin xyz="0 0 0.05" rpy="0 0 0"/><material name="cardboard"><color rgba="0.76 0.60 0.42 1.0"/></material></visual>
+  </link>
+  <joint name="back_major_joint" type="revolute">
+    <parent link="base"/><child link="back_major_flap"/>
+    <origin xyz="0 -0.1 0.1" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-1.570796" upper="0.000000" effort="10" velocity="3"/>
+    <dynamics damping="0.1" friction="0.05"/>
+  </joint>
+</robot>
