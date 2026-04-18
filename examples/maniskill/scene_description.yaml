@@ -15,24 +15,24 @@ background:
 
 scene:
   objects:
-    - name:   small_box
-      type:   box
-      static: false
-      size:   [0.03, 0.03, 0.03]
-      color:  [0.2, 0.5, 0.8, 1.0]
-      pose:   [0.4, 0.1, 2.0]
+#     - name:   small_box
+#       type:   box
+#       static: false
+#       size:   [0.03, 0.03, 0.03]
+#       color:  [0.2, 0.5, 0.8, 1.0]
+#       pose:   [0.4, 0.1, 2.0]
 
     - name:   cardboard_box
       type:   urdf
       path:   ../cardboard_box.urdf
       static: false
-      pose:   [0.5, 0.0, 2.0]
+      pose:   [0.5, 0.0, 1.6]
 
 randomization:
   objects:
-    - name: small_box
-      x: [-0.25, 0.25]
-      y: [-0.35,  0.35]
+    - name: cardboard_box
+      x: [0.5, 0.7]
+      y: [-0.4, 0.4]
       yaw: [0, 1.57]
 
 lighting:
