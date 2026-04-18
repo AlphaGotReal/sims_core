@@ -333,10 +333,9 @@ class ControllerManager:
 
         register_env(env_id, max_episode_steps=10_000)(SimEnv)
 
-        has_cameras  = bool(self.hw_cfg.cameras)
-        obs_mode     = "sensor_data" if has_cameras else "state"
+        obs_mode     = "sensor_data"
         render_mode  = "human" if self.cfg.render.gui else "rgb_array"
-        single_scene = self.cfg.num_envs > 1 and not has_cameras
+        single_scene = False
         return gym.make(
             env_id,
             num_envs                 = self.cfg.num_envs,
@@ -355,13 +354,14 @@ class ControllerManager:
         obs, _     = self.env.reset()
         num_envs   = self.env.unwrapped.num_envs
         control_dt = self.env.unwrapped.control_timestep
+        t          = 0.0
         try:
             while True:
                 t0 = time.perf_counter()
 
                 for stack in self.actors:
                     for actor in stack:
-                        actor.update(obs)
+                        actor.update(obs, t, control_dt)
 
                 batch_action        = np.stack(self.actions)
                 new_obs, _, _, _, _ = self.env.step(batch_action)
@@ -382,7 +382,8 @@ class ControllerManager:
                         self.intermediates[n].clear()
                     new_obs, _ = self.env.reset(options={"env_idx": env_ids})
 
-                obs = new_obs
+                obs  = new_obs
+                t   += control_dt
 
                 if self.cfg.render.gui:
                     self.env.render()

@@ -2,8 +2,8 @@ sim_name:   workcell
 robot_name: piper
 env_name:   BimanualStaticWorkcell-v0
 
-num_envs: 2
-backend: "cuda:0" # uses cpu when n = 1
+num_envs: 1
+backend: "cuda:0" # "auto" uses cpu when n = 1
 
 robot:
   urdf:     ../test.urdf

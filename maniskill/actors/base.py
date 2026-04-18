@@ -27,7 +27,7 @@ class BaseActor:
         self.indices      = list(cfg["indices"])
         self.ikeys        = list(cfg.get("intermediate_writes", []))
 
-    def update(self, obs: dict) -> None:
+    def update(self, obs: dict, t: float, dt: float) -> None:
         """Read obs, write self.action[self.indices]."""
 
     def step_callback(self, obs: dict, action: np.ndarray, new_obs: dict) -> bool:
