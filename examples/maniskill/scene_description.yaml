@@ -2,7 +2,7 @@ sim_name:   workcell
 robot_name: piper
 env_name:   BimanualStaticWorkcell-v0
 
-num_envs: 1
+num_envs: 4
 backend: "cuda:0" # "auto" uses cpu when n = 1
 
 robot:
@@ -44,7 +44,7 @@ lighting:
       shadow:    true
 
 render:
-  gui: true
+  gui: false
   camera:
     eye:    [-0.8, 1.0, 2.0]
     target: [0.0, 1.0, 1.0]
